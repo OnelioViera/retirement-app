@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
+import { UserInputs, SocialSecurityData, AnnuityData, HousingData, Calculations } from '@/types'
 
 // Utility function to format numbers with commas and decimals
 const formatCurrency = (value: string): string => {
@@ -49,37 +50,6 @@ import { Label } from '@/components/ui/label'
 import { DollarSign, Home, PiggyBank, TrendingUp, Plus, Trash2 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 
-interface SocialSecurityData {
-  _id?: string
-  currentMonthlyBenefit: number
-  expectedRetirementAge: number
-  expectedMonthlyBenefit: number
-  spouseCurrentMonthlyBenefit: number
-  spouseExpectedMonthlyBenefit: number
-  updatedAt?: string
-}
-
-interface AnnuityData {
-  _id?: string
-  name: string
-  type: string
-  monthlyPayment: number
-  initialInvestment: number
-  createdAt?: string
-  updatedAt?: string
-}
-
-interface HousingData {
-  _id?: string
-  preferredLocation: string
-  maxMonthlyPayment: number
-  downPayment: number
-  interestRate: number
-  loanTerm: number
-  propertyTaxRate: number
-  insuranceRate: number
-  updatedAt?: string
-}
 
 export default function Dashboard() {
   const [socialSecurity, setSocialSecurity] = useState<SocialSecurityData>({
@@ -104,7 +74,7 @@ export default function Dashboard() {
     insuranceRate: 0.5,
   })
 
-  const [calculations, setCalculations] = useState({
+  const [calculations, setCalculations] = useState<Calculations>({
     totalMonthlyIncome: 0,
     affordableHousePrice: 0,
     monthlyHousingPayment: 0,
@@ -572,9 +542,9 @@ export default function Dashboard() {
                       id={`annuity-type-${index}`}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       value={annuity.type}
-                      onChange={(e) => {
+                      onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                         const newAnnuities = [...annuities]
-                        newAnnuities[index].type = e.target.value
+                        newAnnuities[index].type = e.target.value as 'fixed' | 'variable' | 'immediate' | 'deferred'
                         setAnnuities(newAnnuities)
                       }}
                     >

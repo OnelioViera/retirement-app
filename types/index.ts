@@ -56,3 +56,48 @@ export interface RetirementPlan {
   createdAt: Date
   updatedAt: Date
 }
+
+export interface UserInputs {
+  currentAge: number
+  retirementAge: number
+  currentSalary: number
+  annualIncrease: number
+  currentSavings: number
+  monthlyContribution: number
+  employerMatch: number
+  expectedReturn: number
+  inflationRate: number
+  desiredRetirementIncome: number
+}
+
+export interface SocialSecurityData {
+  currentMonthlyBenefit: number
+  expectedRetirementAge: number
+  expectedMonthlyBenefit: number
+  spouseCurrentMonthlyBenefit: number
+  spouseExpectedMonthlyBenefit: number
+}
+
+export interface AnnuityData {
+  name: string
+  type: 'fixed' | 'variable' | 'immediate' | 'deferred'
+  monthlyPayment: number
+  initialInvestment: number
+}
+
+export interface HousingData {
+  preferredLocation: string
+  maxMonthlyPayment: number
+  downPayment: number
+  interestRate: number
+  loanTerm: number
+  propertyTaxRate: number
+  insuranceRate: number
+}
+
+export interface Calculations {
+  totalMonthlyIncome: number
+  affordableHousePrice: number
+  monthlyHousingPayment: number
+  remainingIncome: number
+}
