@@ -121,6 +121,13 @@ export default function Dashboard() {
   const saveDataToDatabase = async () => {
     try {
       console.log('💾 Saving data to database:', { socialSecurity, annuities, housing, currentHome })
+      console.log('🏡 Current Home Data Details:', {
+        currentValue: currentHome.currentValue,
+        mortgageBalance: currentHome.mortgageBalance,
+        monthlyPayment: currentHome.monthlyPayment,
+        location: currentHome.location,
+        hasData: currentHome.currentValue > 0 || currentHome.mortgageBalance > 0 || currentHome.location !== ''
+      })
       console.log('🌐 Making POST request to:', '/api/retirement-data')
       setIsSaving(true)
       
@@ -728,6 +735,7 @@ export default function Dashboard() {
                     onChange={(e) => {
                       const formattedValue = formatCurrency(e.target.value)
                       const numericValue = parseCurrency(formattedValue)
+                      console.log('🏡 Current Home Value changed:', numericValue)
                       setCurrentHome(prev => ({
                         ...prev,
                         currentValue: Math.round(numericValue * 100) / 100
@@ -875,6 +883,29 @@ export default function Dashboard() {
                     style={{ MozAppearance: 'textfield' }}
                   />
                 </div>
+              </div>
+              
+              {/* Debug Section */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Debug Information</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>Current Home Value: ${currentHome.currentValue.toLocaleString()}</div>
+                  <div>Mortgage Balance: ${currentHome.mortgageBalance.toLocaleString()}</div>
+                  <div>Monthly Payment: ${currentHome.monthlyPayment.toLocaleString()}</div>
+                  <div>Location: {currentHome.location || 'Not set'}</div>
+                  <div>Years Remaining: {currentHome.yearsRemaining}</div>
+                </div>
+                <Button 
+                  onClick={() => {
+                    console.log('🧪 Manual save test triggered')
+                    saveDataToDatabase()
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Test Save Current Home Data
+                </Button>
               </div>
             </CardContent>
           </Card>
