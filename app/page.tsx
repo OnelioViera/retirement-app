@@ -902,17 +902,6 @@ export default function Dashboard() {
                   <div>Location: {currentHome.location || 'Not set'}</div>
                   <div>Years Remaining: {currentHome.yearsRemaining}</div>
                 </div>
-                <Button 
-                  onClick={() => {
-                    console.log('🧪 Manual save test triggered')
-                    saveDataToDatabase()
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                >
-                  Test Save Current Home Data
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1049,17 +1038,6 @@ export default function Dashboard() {
                   <div>Property Tax Rate: {housing.propertyTaxRate}%</div>
                   <div>Insurance Rate: {housing.insuranceRate}%</div>
                 </div>
-                <Button 
-                  onClick={() => {
-                    console.log('🧪 Manual save test triggered for housing')
-                    saveDataToDatabase()
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                >
-                  Test Save Housing Data
-                </Button>
               </div>
             </CardContent>
           </Card>
