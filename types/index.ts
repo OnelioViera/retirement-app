@@ -95,9 +95,23 @@ export interface HousingData {
   insuranceRate: number
 }
 
+export interface CurrentHomeData {
+  currentValue: number
+  mortgageBalance: number
+  monthlyPayment: number
+  interestRate: number
+  location: string
+  yearsRemaining: number
+  propertyTaxRate: number
+  insuranceRate: number
+}
+
 export interface Calculations {
   totalMonthlyIncome: number
   affordableHousePrice: number
   monthlyHousingPayment: number
   remainingIncome: number
+  currentHomeEquity: number
+  currentHomePayment: number
+  netHousingChange: number
 }

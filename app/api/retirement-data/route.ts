@@ -10,6 +10,7 @@ export async function GET() {
     const socialSecurity = await db.collection('socialSecurity').findOne({})
     const annuities = await db.collection('annuities').find({}).toArray()
     const housing = await db.collection('housing').findOne({})
+    const currentHome = await db.collection('currentHome').findOne({})
     
     return NextResponse.json({
       socialSecurity: socialSecurity || {
@@ -30,6 +31,16 @@ export async function GET() {
         loanTerm: 30,
         propertyTaxRate: 1.2,
         insuranceRate: 0.5,
+      },
+      currentHome: currentHome || {
+        currentValue: 0,
+        mortgageBalance: 0,
+        monthlyPayment: 0,
+        interestRate: 0,
+        location: '',
+        yearsRemaining: 0,
+        propertyTaxRate: 0,
+        insuranceRate: 0,
       }
     })
   } catch (error) {
@@ -44,7 +55,7 @@ export async function POST(request: NextRequest) {
     const db = client.db('retirement-app')
     const data = await request.json()
     
-    const { socialSecurity, annuities, housing } = data
+    const { socialSecurity, annuities, housing, currentHome } = data
     
     // Save Social Security data
     if (socialSecurity) {
@@ -75,6 +86,15 @@ export async function POST(request: NextRequest) {
       await db.collection('housing').replaceOne(
         {},
         { ...housing, updatedAt: new Date() },
+        { upsert: true }
+      )
+    }
+    
+    // Save Current Home data
+    if (currentHome) {
+      await db.collection('currentHome').replaceOne(
+        {},
+        { ...currentHome, updatedAt: new Date() },
         { upsert: true }
       )
     }

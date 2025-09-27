@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, ChangeEvent } from 'react'
-import { UserInputs, SocialSecurityData, AnnuityData, HousingData, Calculations } from '@/types'
+import { UserInputs, SocialSecurityData, AnnuityData, HousingData, CurrentHomeData, Calculations } from '@/types'
 
 // Utility function to format numbers with commas and decimals
 const formatCurrency = (value: string): string => {
@@ -74,11 +74,25 @@ export default function Dashboard() {
     insuranceRate: 0.5,
   })
 
+  const [currentHome, setCurrentHome] = useState<CurrentHomeData>({
+    currentValue: 0,
+    mortgageBalance: 0,
+    monthlyPayment: 0,
+    interestRate: 0,
+    location: '',
+    yearsRemaining: 0,
+    propertyTaxRate: 0,
+    insuranceRate: 0,
+  })
+
   const [calculations, setCalculations] = useState<Calculations>({
     totalMonthlyIncome: 0,
     affordableHousePrice: 0,
     monthlyHousingPayment: 0,
     remainingIncome: 0,
+    currentHomeEquity: 0,
+    currentHomePayment: 0,
+    netHousingChange: 0,
   })
 
   // Track focused inputs for zero placeholder behavior
@@ -106,7 +120,7 @@ export default function Dashboard() {
   // Database persistence functions
   const saveDataToDatabase = async () => {
     try {
-      console.log('💾 Saving data to database:', { socialSecurity, annuities, housing })
+      console.log('💾 Saving data to database:', { socialSecurity, annuities, housing, currentHome })
       console.log('🌐 Making POST request to:', '/api/retirement-data')
       setIsSaving(true)
       
@@ -119,6 +133,7 @@ export default function Dashboard() {
           socialSecurity,
           annuities,
           housing,
+          currentHome,
         }),
       })
       
@@ -171,6 +186,13 @@ export default function Dashboard() {
         console.log('🏠 Housing interest rate:', data.housing.interestRate)
         setHousing(data.housing)
       }
+      if (data.currentHome) {
+        console.log('✅ Setting current home data:', data.currentHome)
+        console.log('🏡 Current home value:', data.currentHome.currentValue)
+        console.log('🏡 Current mortgage balance:', data.currentHome.mortgageBalance)
+        console.log('🏡 Current monthly payment:', data.currentHome.monthlyPayment)
+        setCurrentHome(data.currentHome)
+      }
       
       // Mark data as loaded to enable saving
       setIsDataLoaded(true)
@@ -211,11 +233,19 @@ export default function Dashboard() {
 
     const remainingIncome = totalMonthlyIncome - monthlyHousingPayment
 
+    // Calculate current home equity and payment
+    const currentHomeEquity = currentHome.currentValue - currentHome.mortgageBalance
+    const currentHomePayment = currentHome.monthlyPayment
+    const netHousingChange = monthlyHousingPayment - currentHomePayment
+
     setCalculations({
       totalMonthlyIncome,
       affordableHousePrice,
       monthlyHousingPayment,
       remainingIncome,
+      currentHomeEquity,
+      currentHomePayment,
+      netHousingChange,
     })
   }
 
@@ -227,14 +257,14 @@ export default function Dashboard() {
 
   // Calculate retirement plan when data changes
   useEffect(() => {
-    console.log('🧮 Calculating retirement plan with data:', { socialSecurity, annuities, housing })
+    console.log('🧮 Calculating retirement plan with data:', { socialSecurity, annuities, housing, currentHome })
     calculateRetirementPlan()
-  }, [socialSecurity, annuities, housing])
+  }, [socialSecurity, annuities, housing, currentHome])
 
   // Save data to database when any data changes (with debouncing)
   // Only save if data has been loaded from database first
   useEffect(() => {
-    console.log('💾 Save effect triggered - isDataLoaded:', isDataLoaded, 'data:', { socialSecurity, annuities, housing })
+    console.log('💾 Save effect triggered - isDataLoaded:', isDataLoaded, 'data:', { socialSecurity, annuities, housing, currentHome })
     
     if (!isDataLoaded) {
       console.log('⏳ Skipping save - data not loaded yet')
@@ -250,7 +280,7 @@ export default function Dashboard() {
       console.log('🧹 Clearing save timeout')
       clearTimeout(timeoutId)
     }
-  }, [socialSecurity, annuities, housing, isDataLoaded])
+  }, [socialSecurity, annuities, housing, currentHome, isDataLoaded])
 
   const incomeData = [
     { name: 'Social Security', value: socialSecurity.expectedMonthlyBenefit + socialSecurity.spouseExpectedMonthlyBenefit, color: '#3B82F6' },
@@ -343,6 +373,51 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Current Home Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Current Home Equity</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${calculations.currentHomeEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground">
+              Value - Mortgage Balance
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Current Monthly Payment</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${calculations.currentHomePayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground">
+              Current housing cost
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Housing Change</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${calculations.netHousingChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+              ${Math.abs(calculations.netHousingChange).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {calculations.netHousingChange >= 0 ? ' more' : ' less'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              vs. current payment
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -394,10 +469,11 @@ export default function Dashboard() {
 
       {/* Input Forms */}
       <Tabs defaultValue="social-security" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="social-security">Social Security</TabsTrigger>
           <TabsTrigger value="annuities">Annuities</TabsTrigger>
-          <TabsTrigger value="housing">Housing</TabsTrigger>
+          <TabsTrigger value="current-home">Current Home</TabsTrigger>
+          <TabsTrigger value="housing">Future Housing</TabsTrigger>
           <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
         </TabsList>
 
@@ -629,6 +705,181 @@ export default function Dashboard() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="current-home" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Current Home Information</CardTitle>
+              <CardDescription>
+                Enter details about your current home for retirement planning
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-home-value">Current Home Value</Label>
+                  <Input
+                    id="current-home-value"
+                    type="text"
+                    placeholder="0"
+                    value={focusedInputs.has('current-home-value') ? 
+                      (currentHome.currentValue === 0 ? '' : formatCurrency(currentHome.currentValue.toString())) :
+                      (currentHome.currentValue === 0 ? '0' : formatCurrency(currentHome.currentValue.toString()))
+                    }
+                    onChange={(e) => {
+                      const formattedValue = formatCurrency(e.target.value)
+                      const numericValue = parseCurrency(formattedValue)
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        currentValue: Math.round(numericValue * 100) / 100
+                      }))
+                    }}
+                    onFocus={() => handleFocus('current-home-value')}
+                    onBlur={() => handleBlur('current-home-value')}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mortgage-balance">Mortgage Balance</Label>
+                  <Input
+                    id="mortgage-balance"
+                    type="text"
+                    placeholder="0"
+                    value={focusedInputs.has('mortgage-balance') ? 
+                      (currentHome.mortgageBalance === 0 ? '' : formatCurrency(currentHome.mortgageBalance.toString())) :
+                      (currentHome.mortgageBalance === 0 ? '0' : formatCurrency(currentHome.mortgageBalance.toString()))
+                    }
+                    onChange={(e) => {
+                      const formattedValue = formatCurrency(e.target.value)
+                      const numericValue = parseCurrency(formattedValue)
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        mortgageBalance: Math.round(numericValue * 100) / 100
+                      }))
+                    }}
+                    onFocus={() => handleFocus('mortgage-balance')}
+                    onBlur={() => handleBlur('mortgage-balance')}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="current-monthly-payment">Monthly Payment</Label>
+                  <Input
+                    id="current-monthly-payment"
+                    type="text"
+                    placeholder="0"
+                    value={focusedInputs.has('current-monthly-payment') ? 
+                      (currentHome.monthlyPayment === 0 ? '' : formatCurrency(currentHome.monthlyPayment.toString())) :
+                      (currentHome.monthlyPayment === 0 ? '0' : formatCurrency(currentHome.monthlyPayment.toString()))
+                    }
+                    onChange={(e) => {
+                      const formattedValue = formatCurrency(e.target.value)
+                      const numericValue = parseCurrency(formattedValue)
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        monthlyPayment: Math.round(numericValue * 100) / 100
+                      }))
+                    }}
+                    onFocus={() => handleFocus('current-monthly-payment')}
+                    onBlur={() => handleBlur('current-monthly-payment')}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="current-interest-rate">Interest Rate (%)</Label>
+                  <Input
+                    id="current-interest-rate"
+                    type="text"
+                    placeholder="0"
+                    value={currentHome.interestRate === 0 ? '' : currentHome.interestRate.toFixed(2)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.]/g, '')
+                      const numValue = parseFloat(value) || 0
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        interestRate: Math.round(numValue * 100) / 100
+                      }))
+                    }}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="current-location">Current Location</Label>
+                  <Input
+                    id="current-location"
+                    value={currentHome.location}
+                    onChange={(e) => setCurrentHome(prev => ({
+                      ...prev,
+                      location: e.target.value
+                    }))}
+                    placeholder="e.g., Austin, TX"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="years-remaining">Years Remaining</Label>
+                  <Input
+                    id="years-remaining"
+                    type="text"
+                    placeholder="0"
+                    value={currentHome.yearsRemaining === 0 ? '' : currentHome.yearsRemaining.toFixed(0)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      const numValue = parseInt(value) || 0
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        yearsRemaining: numValue
+                      }))
+                    }}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="current-property-tax">Property Tax Rate (%)</Label>
+                  <Input
+                    id="current-property-tax"
+                    type="text"
+                    placeholder="0"
+                    value={currentHome.propertyTaxRate === 0 ? '' : currentHome.propertyTaxRate.toFixed(2)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.]/g, '')
+                      const numValue = parseFloat(value) || 0
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        propertyTaxRate: Math.round(numValue * 100) / 100
+                      }))
+                    }}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="current-insurance">Insurance Rate (%)</Label>
+                  <Input
+                    id="current-insurance"
+                    type="text"
+                    placeholder="0"
+                    value={currentHome.insuranceRate === 0 ? '' : currentHome.insuranceRate.toFixed(2)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.]/g, '')
+                      const numValue = parseFloat(value) || 0
+                      setCurrentHome(prev => ({
+                        ...prev,
+                        insuranceRate: Math.round(numValue * 100) / 100
+                      }))
+                    }}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    style={{ MozAppearance: 'textfield' }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="housing" className="space-y-4">
           <Card>
             <CardHeader>
@@ -797,6 +1048,49 @@ export default function Dashboard() {
                       <div className="text-sm text-yellow-600">Expected Total SS</div>
                       <div className="font-semibold text-yellow-900">
                         ${(socialSecurity.expectedMonthlyBenefit + socialSecurity.spouseExpectedMonthlyBenefit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-purple-50">
+                  <h4 className="font-semibold text-purple-900 mb-2">Current Home Equity Impact</h4>
+                  <p className="text-sm text-purple-700">
+                    How your current home equity could affect retirement housing decisions
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-purple-600">Available Equity</div>
+                      <div className="font-semibold text-purple-900">
+                        ${calculations.currentHomeEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-purple-600">Monthly Payment Change</div>
+                      <div className={`font-semibold ${calculations.netHousingChange >= 0 ? 'text-red-900' : 'text-green-900'}`}>
+                        ${Math.abs(calculations.netHousingChange).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {calculations.netHousingChange >= 0 ? ' more' : ' less'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-indigo-50">
+                  <h4 className="font-semibold text-indigo-900 mb-2">Stay vs Move Analysis</h4>
+                  <p className="text-sm text-indigo-700">
+                    Financial comparison of staying in current home vs moving to retirement location
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-indigo-600">Stay Current Home</div>
+                      <div className="font-semibold text-indigo-900">
+                        ${calculations.currentHomePayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-indigo-600">Move to Retirement Location</div>
+                      <div className="font-semibold text-indigo-900">
+                        ${calculations.monthlyHousingPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month
                       </div>
                     </div>
                   </div>
