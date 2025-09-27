@@ -128,6 +128,13 @@ export default function Dashboard() {
         location: currentHome.location,
         hasData: currentHome.currentValue > 0 || currentHome.mortgageBalance > 0 || currentHome.location !== ''
       })
+      console.log('🏠 Housing Data Details:', {
+        preferredLocation: housing.preferredLocation,
+        downPayment: housing.downPayment,
+        interestRate: housing.interestRate,
+        loanTerm: housing.loanTerm,
+        hasData: housing.downPayment > 0 || housing.preferredLocation !== ''
+      })
       console.log('🌐 Making POST request to:', '/api/retirement-data')
       setIsSaving(true)
       
@@ -943,6 +950,7 @@ export default function Dashboard() {
                     onChange={(e) => {
                       const formattedValue = formatCurrency(e.target.value)
                       const numericValue = parseCurrency(formattedValue)
+                      console.log('🏠 Down Payment changed:', numericValue)
                       setHousing(prev => ({
                         ...prev,
                         downPayment: Math.round(numericValue * 100) / 100
@@ -1028,6 +1036,30 @@ export default function Dashboard() {
                     style={{ MozAppearance: 'textfield' }}
                   />
                 </div>
+              </div>
+              
+              {/* Debug Section */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Debug Information</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>Preferred Location: {housing.preferredLocation || 'Not set'}</div>
+                  <div>Down Payment: ${housing.downPayment.toLocaleString()}</div>
+                  <div>Interest Rate: {housing.interestRate}%</div>
+                  <div>Loan Term: {housing.loanTerm} years</div>
+                  <div>Property Tax Rate: {housing.propertyTaxRate}%</div>
+                  <div>Insurance Rate: {housing.insuranceRate}%</div>
+                </div>
+                <Button 
+                  onClick={() => {
+                    console.log('🧪 Manual save test triggered for housing')
+                    saveDataToDatabase()
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Test Save Housing Data
+                </Button>
               </div>
             </CardContent>
           </Card>
