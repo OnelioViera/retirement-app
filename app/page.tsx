@@ -894,7 +894,7 @@ export default function Dashboard() {
               
               {/* Debug Section */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Debug Information</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">Overview</h4>
                 <div className="text-sm text-gray-600 space-y-1">
                   <div>Current Home Value: ${currentHome.currentValue.toLocaleString()}</div>
                   <div>Mortgage Balance: ${currentHome.mortgageBalance.toLocaleString()}</div>
@@ -935,7 +935,10 @@ export default function Dashboard() {
                     id="down-payment"
                     type="text"
                     placeholder="0"
-                    value={housing.downPayment === 0 ? '' : formatCurrency(housing.downPayment.toString())}
+                    value={focusedInputs.has('down-payment') ? 
+                      (housing.downPayment === 0 ? '' : formatCurrency(housing.downPayment.toString())) :
+                      (housing.downPayment === 0 ? '0' : formatCurrency(housing.downPayment.toString()))
+                    }
                     onChange={(e) => {
                       const formattedValue = formatCurrency(e.target.value)
                       const numericValue = parseCurrency(formattedValue)
@@ -945,6 +948,8 @@ export default function Dashboard() {
                         downPayment: Math.round(numericValue * 100) / 100
                       }))
                     }}
+                    onFocus={() => handleFocus('down-payment')}
+                    onBlur={() => handleBlur('down-payment')}
                     onWheel={(e) => e.currentTarget.blur()}
                     style={{ MozAppearance: 'textfield' }}
                   />
@@ -1029,7 +1034,7 @@ export default function Dashboard() {
               
               {/* Debug Section */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Debug Information</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">Overview</h4>
                 <div className="text-sm text-gray-600 space-y-1">
                   <div>Preferred Location: {housing.preferredLocation || 'Not set'}</div>
                   <div>Down Payment: ${housing.downPayment.toLocaleString()}</div>
